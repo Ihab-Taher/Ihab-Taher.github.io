@@ -1,0 +1,327 @@
+1 - dailyCalories
+    	  
+    select min(Calories), max(Calories)
+    from dailyCalories;
+    
+    select Calories, cast(Calories as smallint) CaloriesCasted
+    from dailyCalories;
+    
+    select *
+    from INFORMATION_SCHEMA.columns
+    where table_name = 'dailyCalories';
+    
+    alter table dailyCalories alter column Calories smallint;
+    
+    select count(distinct Calories)
+    from dailyCalories;
+    
+    select ActivityDay, convert(date, ActivityDay, 101)
+    from dailyCalories;
+    
+    alter table dailyCalories add tmp varchar(100);
+    
+    update dailyCalories set tmp = ActivityDay;
+    
+    alter table dailyCalories alter column ActivityDay date;
+    
+    update dailyCalories set ActivityDay = convert(date, tmp, 101);
+    alter table dailyCalories drop column tmp;
+    
+    select min(ActivityDay), max(ActivityDay)
+    from dailyCalories;
+    
+    select count(distinct ActivityDay)
+    from dailyCalories;
+    
+    select Id, cast(Id as bigint)
+    from dailyCalories;
+    
+    alter table dailyCalories alter column Id bigint;
+    
+    select count(distinct Id)
+    from dailyCalories;
+    
+    select distinct len(Id)
+    from dailyCalories;
+    
+    select min(Id), max(Id)
+    from dailyCalories;
+		  
+	-- Empty result	
+	select Id, ActivityDay
+    from dailyCalories
+    group by Id, ActivityDay
+    having count(*) > 1;
+		  
+2 - dailySteps
+
+    select Id, cast(Id as bigint)
+    from dailySteps;
+    
+    alter table dailySteps alter column Id bigint;
+    
+    select min(Id), max(Id), count(distinct Id), min(len(Id)), max(len(Id))
+    from dailySteps;
+    
+    select stepTotal, cast(stepTotal as int)
+    from dailySteps;
+    
+    alter table dailySteps alter column stepTotal int;
+    
+    select min(stepTotal), max(stepTotal), count(distinct stepTotal)
+    from dailySteps;
+    
+    alter table dailySteps add tmp varchar(50);
+    
+    update dailySteps set tmp = ActivityDay;
+    
+    alter table dailySteps alter column ActivityDay date;
+    
+    select tmp, convert(date, tmp, 101) from dailySteps;
+    
+    update dailySteps set ActivityDay = convert(date, tmp, 101);
+    alter table dailySteps drop column tmp;
+	
+	-- Empty result
+	select Id, ActivityDay
+    from dailySteps
+    group by Id, ActivityDay
+    having count(*) > 1;
+	
+3 - heartrate_seconds
+
+    select Id, cast(Id as bigint) new_Id
+    from heartrate_seconds;
+    
+    alter table heartrate_seconds alter column Id bigint;
+    
+    select min(Id), max(Id), count(distinct Id), min(len(Id)), max(len(Id)), count(case when Id is null then 1 else null end)
+    from heartrate_seconds;
+	
+	select Value, cast(Value as smallint)
+    from heartrate_seconds;
+    
+    alter table heartrate_seconds alter column Value smallint;
+    
+    select min(Value), max(Value), count(distinct Value), count(case when Value is null then 1 else null end)
+    from heartrate_seconds;
+	
+	select Time, convert(datetime2, Time, 101)
+    from heartrate_seconds;
+    
+    alter table heartrate_seconds add tmp varchar(50);
+    
+    update heartrate_seconds set tmp = Time;
+    
+    alter table heartrate_seconds alter column Time datetime2;
+    
+    update heartrate_seconds set Time = convert(datetime2, tmp, 101);
+    
+    alter table heartrate_seconds drop column tmp;
+    
+    select min(Time), max(Time), count(case when Time is null then 1 else null end)
+    from heartrate_seconds;
+	
+	-- Empty result
+	select Id, Time
+    from heartrate_seconds
+    group by Id, Time
+    having count(*) > 1;
+	
+4 - sleepDay
+
+    select *
+    from sleepDay
+    where Id != cast(Id as bigint);
+    
+    alter table sleepDay alter column Id bigint;
+    
+    select min(Id), max(Id), count(distinct Id), min(len(Id)), max(len(Id)), count(case when Id is null then 1 else null end)
+    from sleepDay;
+	
+	select min(TotalMinutesAsleep), max(TotalMinutesAsleep), count(case when TotalMinutesAsleep is null then 1 else null end), 
+       count(distinct TotalMinutesAsleep)
+    from sleepDay;
+    
+    select min(TotalTimeInBed), max(TotalTimeInBed), count(case when TotalTimeInBed is null then 1 else null end), 
+           count(distinct TotalTimeInBed)
+    from sleepDay;
+    
+    
+    alter table sleepDay alter column TotalMinutesAsleep smallint;
+    alter table sleepDay alter column TotalTimeInBed smallint;
+	
+	select TotalSleepRecords, cast(TotalSleepRecords as smallint)
+    from sleepDay;
+    
+    alter table sleepDay alter column TotalSleepRecords smallint;
+    
+    select min(TotalSleepRecords), max(TotalSleepRecords), count(distinct TotalSleepRecords), count(case when TotalSleepRecords is null then 1 else null end)
+    from sleepDay;
+    
+    select SleepDay, convert(date, SleepDay, 101)
+    from sleepDay;
+    
+    alter table sleepDay add tmp varchar(50);
+    
+    update sleepDay set tmp = SleepDay;
+    
+    alter table sleepDay alter column SleepDay date;
+    
+    update sleepDay set SleepDay = convert(date, tmp, 101);
+    
+    -- Make sure that all dates are of 12:00 AM so time part can be ignored
+    select distinct trim(substring(trim(tmp), charindex(' ', trim(tmp))+1, 50))
+    from sleepDay;
+    
+    alter table sleepDay drop column tmp;
+    
+    select *
+    from sleepDay;
+	
+	select min(sleepDay), max(sleepDay), count(distinct sleepDay), 
+       count(case when sleepDay is null then 1 else null end)
+    from sleepDay;
+    
+	-- Results in 3 rows, after investigating each row it is found to be a duplicate
+    select Id, sleepDay
+    from sleepDay
+    group by Id, sleepDay
+    having count(*) > 1;
+	
+	-- Steps to remove duplicates
+	1 - Create a temp. table 
+	    select T.*, row_number() over(partition by Id, sleepDay order by Id) k
+        into #sleepDayAux
+        from sleepDay T;
+		
+	2 - Delete the duplicated rows from the temp. table
+	    delete from #sleepDayAux where k=2;
+	
+	3 - Truncate the original table and insert into it the cleansed data
+	    
+		truncate table sleepDay;
+
+        insert into sleepDay
+        select Id, SleepDay, TotalSleepRecords, TotalMinutesAsleep, TotalTimeInBed
+        from #sleepDayAux;
+	
+	4 - Drop the temp. table
+	    drop table #sleepDayAux;
+		
+	5 - Make sure there are no duplicates
+	    select Id, sleepDay
+        from sleepDay
+        group by Id, sleepDay
+        having count(*) > 1;
+		
+5 - weightLogInfo
+
+    select *
+    from weightLogInfo
+    where Id != cast(Id as bigint);
+    
+    alter table weightLogInfo alter column Id bigint;
+    
+    select min(Id), max(Id), min(len(Id)), max(len(Id)), count(distinct Id), count(case when Id is null then 1 else null end)
+    from weightLogInfo;
+	
+	select Fat, cast(Fat as smallint)
+    from weightLogInfo
+    where Fat != cast(Fat as smallint);
+    
+    alter table weightLogInfo alter column Fat smallint;
+    
+    select min(Fat), max(Fat), count(distinct Fat), count(case when fat is null then 1 else null end)
+    from weightLogInfo;
+	
+	select min(cast(IsManualReport as smallint)), max(cast(IsManualReport as smallint)), 
+       count(case when IsManualReport is null then 1 else null end)
+    from weightLogInfo;
+	
+	select *
+    from weightLogInfo
+    where LogId != cast(LogId as bigint);
+    
+    alter table weightLogInfo alter column LogId bigint;
+    
+    select min(LogId), max(LogId), min(len(LogId)), max(len(LogId)), count(distinct LogId), 
+           count(case when LogId is null then 1 else null end)
+    from weightLogInfo;
+	
+	select Id, Date
+    from weightLogInfo
+    group by Id, Date
+    having count(*) > 1;
+    
+    alter table weightLogInfo add tmp varchar(50);
+    
+    update weightLogInfo set tmp = Date;
+    
+    select min(Date), max(Date), count(distinct Date), count(case when Date is null then 1 else null end)
+    from weightLogInfo;
+    
+    alter table weightLogInfo alter column Date datetime2;
+    
+    update weightLogInfo set Date = convert(datetime2, tmp, 101);
+    
+    alter table weightLogInfo drop column tmp;
+	
+6 - dailyActivity
+
+    select distinct len(ActivityDate)
+    from dailyActivity
+    where substring(ActivityDate, 1, 1) = '4';
+    
+    update dailyActivity 
+    set ActivityDate = '0' + ActivityDate
+    where substring(ActivityDate, 1, 1) = '4';
+    
+    alter table dailyActivity alter column Id bigint;
+    
+    alter table dailyActivity alter column TotalSteps int;
+    
+    alter table dailyActivity alter column TotalDistance float;
+    alter table dailyActivity alter column TrackerDistance float;
+    alter table dailyActivity alter column LoggedActivitiesDistance float;
+    alter table dailyActivity alter column VeryActiveDistance float;
+    alter table dailyActivity alter column ModeratelyActiveDistance float;
+    alter table dailyActivity alter column LightActiveDistance float;
+    alter table dailyActivity alter column SedentaryActiveDistance float;
+    
+    alter table dailyActivity alter column VeryActiveMinutes int;
+    alter table dailyActivity alter column FairlyActiveMinutes int;
+    alter table dailyActivity alter column LightlyActiveMinutes int;
+    alter table dailyActivity alter column SedentaryMinutes int;
+    
+    alter table dailyActivity alter column Calories smallint;
+    
+    alter table dailyActivity add tmp varchar(50);
+    
+    update dailyActivity set tmp = ActivityDate;
+    
+    alter table dailyActivity alter column ActivityDate date;
+    
+    update dailyActivity set ActivityDate = convert(date, tmp, 101);
+    
+    alter table dailyActivity drop column tmp;
+	
+
+-- Create consumers table
+create table consumers (Id bigint);
+
+insert into consumers
+select Id
+from dailyCalories
+union
+select Id
+from dailySteps
+union
+select Id
+from heartrate_seconds
+union
+select Id
+from sleepDay
+union
+select Id
+from weightLogInfo;
